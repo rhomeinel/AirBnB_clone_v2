@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """This is the file storage class for AirBnB"""
 import json
-import datetime
 from models.base_model import BaseModel
 from models.user import User
 from models.state import State
@@ -16,19 +15,28 @@ class FileStorage:
     deserializes JSON file to instances
     Attributes:
         __file_path: path to the JSON file
-        __objects: objects will be stored
+        __objects: objects will be stored with key clsname.objectID
     """
     __file_path = "file.json"
     __objects = {}
+    __clsdict = {
+        "User": User,
+        "State": State,
+        "City": City,
+        "Amenity": Amenity,
+        "Place": Place,
+        "Review": Review
+    }
 
     def all(self, cls=None):
         """returns a dictionary
         Return:
             returns a dictionary of __object
         """
+        cls = cls if not isinstance(cls, str) else self.__clsdict.get(cls)
         if cls:
-            return {key: obj for (key, obj) in self.__objects.items()
-                    if isinstance(obj, cls)}
+            return {k: v for k, v in self.__objects.items()
+                    if isinstance(v, cls)}
         return self.__objects
 
     def new(self, obj):
@@ -61,71 +69,20 @@ class FileStorage:
             pass
 
     def delete(self, obj=None):
-        """Deletes obj if it's inside the attribute __objects
+        """delete an object from __objects if the given object exists
+        Args:
+            obj: given object
+        Exceptions:
+            KeyError: when object doesn't exist
         """
         if obj:
             key = "{}.{}".format(type(obj).__name__, obj.id)
-            if (key, obj) in self.__objects.items():
-                self.__objects.pop(key, None)
-        self.save()
+            try:
+                del self.__objects[key]
+            except KeyError:
+                pass
 
     def close(self):
-        """Deserializes the JSON file to objects"""
+        """deserializing the JSON file to objects
+        """
         self.reload()
-
-    def classes(self):
-        """Returns a dictionary of valid classes and their references."""
-        from models.base_model import BaseModel
-        from models.user import User
-        from models.state import State
-        from models.city import City
-        from models.amenity import Amenity
-        from models.place import Place
-        from models.review import Review
-
-        classes = {"BaseModel": BaseModel,
-                   "User": User,
-                   "State": State,
-                   "City": City,
-                   "Amenity": Amenity,
-                   "Place": Place,
-                   "Review": Review}
-        return classes
-
-    def attributes(self):
-        """Returns the valid attributes and their types for classname."""
-        attributes = {
-            "BaseModel":
-                     {"id": str,
-                      "created_at": datetime.datetime,
-                      "updated_at": datetime.datetime},
-            "User":
-                     {"email": str,
-                      "password": str,
-                      "first_name": str,
-                      "last_name": str},
-            "State":
-                     {"name": str},
-            "City":
-                     {"state_id": str,
-                      "name": str},
-            "Amenity":
-                     {"name": str},
-            "Place":
-                     {"city_id": str,
-                      "user_id": str,
-                      "name": str,
-                      "description": str,
-                      "number_rooms": int,
-                      "number_bathrooms": int,
-                      "max_guest": int,
-                      "price_by_night": int,
-                      "latitude": float,
-                      "longitude": float,
-                      "amenity_ids": list},
-            "Review":
-            {"place_id": str,
-                         "user_id": str,
-                         "text": str}
-        }
-        return attributes
